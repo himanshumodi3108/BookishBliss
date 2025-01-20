@@ -12,9 +12,13 @@ app.get('/', (req, res) => {
     res.send('Hello World!')
 })
 
-// mongodb confiq here
+// mongodb config here
+require('dotenv').config();
+//const mongoose = require('mongoose');
+
+const uri = process.env.mongo_uri;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const uri = "mongodb+srv://book-store:kE6ABm2ApfPxpoWE@cluster0.f0zrawa.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+//const uri = "mongodb+srv://<username>:<password>@cluster0.f0zrawa.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
