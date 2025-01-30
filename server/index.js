@@ -1,24 +1,34 @@
 const express = require('express')
 const app = express();
 const cors = require('cors')
+require('dotenv').config();
 const port = process.env.PORT || 5000;
 
+// CORS configuration
+const allowedOrigins = [
+    'http://localhost:5173',  // Local Vite development
+    process.env.FRONTEND_URL // Vercel deployed frontend
+];
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true)
+        } else {
+            callback(new Error('Not allowed by CORS'))
+        }
+    },
+    credentials: true,
+    optionsSuccessStatus: 200
+};
+
 // middlewear 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
-
-app.get('/', (req, res) => {
-    res.send('Hello World!')
-})
-
 // mongodb config here
-require('dotenv').config();
-//const mongoose = require('mongoose');
-
-const uri = process.env.mongo_uri;
+const uri = process.env.MONGODB_URI || process.env.mongo_uri;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-//const uri = "mongodb+srv://<username>:<password>@cluster0.f0zrawa.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -26,7 +36,10 @@ const client = new MongoClient(uri, {
         version: ServerApiVersion.v1,
         strict: true,
         deprecationErrors: true,
-    }
+    },
+    maxPoolSize: 10, // Optimize for deployment
+    socketTimeoutMS: 45000, // Handle slow connections
+    connectTimeoutMS: 10000 // Connection timeout
 });
 
 async function run() {
@@ -35,7 +48,6 @@ async function run() {
         await client.connect();
         // Send a ping to confirm a successful connection
         const bookCollections = client.db("BookInventory").collection("books");
-
 
         // insert a book to db: Post Method
         app.post("/upload-book", async (req, res) => {
@@ -80,7 +92,6 @@ async function run() {
             res.send(result);
         })
 
-
         // delete a item from db
         app.delete("/book/:id", async (req, res) => {
             const id = req.params.id;
@@ -88,7 +99,6 @@ async function run() {
             const result = await bookCollections.deleteOne(filter);
             res.send(result);
         })
-
 
         // get a single book data
         app.get("/book/:id", async (req, res) => {
@@ -108,9 +118,10 @@ async function run() {
 }
 run().catch(console.dir);
 
-app.listen(port, () => {
-    console.log(`Listening on port ${port}`)
+app.get('/', (req, res) => {
+    res.send('Hello World!')
 })
 
-
-
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Server is running on port ${port}`)
+})
