@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { useLoaderData, useParams } from 'react-router-dom';
 import { Button, Label, TextInput, Textarea, Select } from "flowbite-react";
 
+import config from '../config/config';
+
+// Then replace all fetch calls like this:
+// fetch(`${config.API_URL}/all-books`)
+
 const EditBooks = () => {
   const {id} = useParams();
   const {bookTitle, authorName, imageURL, category, bookDescription, bookPDFURL, price} = useLoaderData();
@@ -55,7 +60,7 @@ const EditBooks = () => {
     //console.log(bookObj);
 
     //Update book data
-    fetch(`http://localhost:5000/book/${id}`, {
+    fetch(`${config.API_URL}/book/${id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json"

@@ -17,6 +17,7 @@ import Signup from "../components/Signup";
 import Login from "../components/Login";
 import PrivateRoute from "../PrivateRoute/PrivateRoute";
 import Logout from "../components/Logout";
+import config from '../config/config';
 
 const router = createBrowserRouter([
     {
@@ -42,7 +43,7 @@ const router = createBrowserRouter([
             {
                 path: "/book/:id",
                 element: <SingleBook />,
-                loader: ({params}) => fetch(`http://localhost:5000/book/${params.id}`)
+                loader: ({params}) => fetch(`${config.API_URL}/book/${params.id}`)
             },
         ]
     },
@@ -65,7 +66,7 @@ const router = createBrowserRouter([
             {
                 path: "/admin/dashboard/edit-books/:id",
                 element: <EditBooks />,
-                loader: ({params}) => fetch(`http://localhost:5000/book/${params.id}`)
+                loader: ({params}) => fetch(`${config.API_URL}/book/${params.id}`)
             },
         ]
     },
