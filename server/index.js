@@ -18,6 +18,13 @@ app.use(express.json());
 
 // mongodb config here
 const uri = process.env.MONGODB_URI;
+if (!uri) {
+    console.error('MONGODB_URI is not defined in environment variables');
+    process.exit(1);
+}
+
+console.log('MongoDB URI:', uri.replace(/mongodb\+srv:\/\/([^:]+):([^@]+)@/, 'mongodb+srv://[username]:[password]@')); // Log URI without credentials
+
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -101,6 +108,8 @@ async function run() {
         //Send a ping to confirm successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    } catch (error) {
+        console.error("Error connecting to MongoDB:", error);
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
