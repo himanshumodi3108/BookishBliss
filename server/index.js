@@ -27,7 +27,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 // mongodb config here
-const uri = process.env.MONGODB_URI || process.env.mongo_uri;
+const uri = process.env.MONGODB_URI;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
