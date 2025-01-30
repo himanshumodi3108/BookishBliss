@@ -19,7 +19,6 @@ const BookCards = ({headline, books}) => {
     <div className='my-16 px-4 lg:px-24'>
         <h2 className='text-5xl text-center font-bold text-black my-5'>{headline}</h2>
 
-
         {/* Cards */ }
         <div className='mt-12'>
             <Swiper
@@ -34,12 +33,12 @@ const BookCards = ({headline, books}) => {
                     spaceBetween: 20,
                 },
                 768: {
-                    slidesPerView: 4,
-                    spaceBetween: 40,
+                    slidesPerView: 3,
+                    spaceBetween: 30,
                 },
                 1024: {
-                    slidesPerView: 5,
-                    spaceBetween: 50,
+                    slidesPerView: 4,
+                    spaceBetween: 40,
                 },
                 }}
                 modules={[Pagination]}
@@ -47,21 +46,19 @@ const BookCards = ({headline, books}) => {
             >
                 {
                     books.map(book => <SwiperSlide key={book._id}>
-                        <Link to={`/book/${book._id}`}>
+                        <Link to={`/book/${book._id}`} className="block hover:shadow-xl transition-shadow duration-300">
                             <div className='relative'>
-                                <img src={book.imageURL} alt="" />
+                                <img src={book.imageURL} alt="" className='w-full h-[320px] object-cover rounded-t-lg' />
                                 <div className='absolute top-3 right-3 bg-blue-600 hover:bg-black p-2 rounded'>
                                     <FaCartShopping className='w-4 h-4 text-white' />
                                 </div>
                             </div>
-                            <div>
-                                <div>
-                                    <h3>{book.bookTitle}</h3>
-                                    <p>{book.authorName}</p>
+                            <div className='p-4 rounded-b-lg bg-gray-50'>
+                                <div className='flex justify-between items-center gap-2 mb-2'>
+                                    <h3 className='text-lg font-semibold text-gray-900 truncate flex-1'>{book.bookTitle}</h3>
+                                    <p className='text-lg font-bold text-blue-600 whitespace-nowrap'>&#8377;{book.price}</p>
                                 </div>
-                                <div>
-                                    <p>&#8377; {book.price}</p>
-                                </div>
+                                <p className='text-sm text-gray-600'>{book.authorName}</p>
                             </div>
                         </Link>
                     </SwiperSlide>)
