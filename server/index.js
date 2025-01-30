@@ -5,21 +5,11 @@ require('dotenv').config();
 const port = process.env.PORT || 5000;
 
 // CORS configuration
-const allowedOrigins = [
-    'http://localhost:5173',  // Local Vite development
-    process.env.FRONTEND_URL // Vercel deployed frontend
-];
-
 const corsOptions = {
-    origin: function (origin, callback) {
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true)
-        } else {
-            callback(new Error('Not allowed by CORS'))
-        }
-    },
+    origin: '*',  // Allow all origins temporarily
     credentials: true,
-    optionsSuccessStatus: 200
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 // middlewear 
