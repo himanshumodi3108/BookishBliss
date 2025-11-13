@@ -1,30 +1,88 @@
-import React, { useEffect, useState } from 'react';
-import { Table } from "flowbite-react";
+import React, { useEffect, useState, useContext } from 'react';
+import { Table, Spinner, Badge, Alert } from "flowbite-react";
 import { Link } from 'react-router-dom';
+import apiClient from '../utils/api';
+import showToast from '../utils/toast';
+import { AuthContext } from '../contexts/AuthProvider';
 
-import config from '../config/config';
-
-const ManageBooks = () => {
+const ManageBooks = ({ isAdmin, isSeller }) => {
+  const { user } = useContext(AuthContext);
   const [allBooks, setAllBooks] = useState([]);
-  useEffect( () => {
-    fetch(`${config.API_URL}/all-books`).then(res => res.json()).then(data => setAllBooks(data));
-  }, [])
+  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        setLoading(true);
+        // If seller (not admin), fetch only their books
+        if (isSeller && !isAdmin) {
+          const data = await apiClient.get('/books/seller?limit=1000');
+          setAllBooks(data.books || data);
+        } else {
+          // Admin sees all books
+          const data = await apiClient.get('/all-books?limit=1000');
+          setAllBooks(data.books || data);
+        }
+      } catch (error) {
+        showToast.error('Failed to load books. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBooks();
+  }, [isAdmin, isSeller]);
 
   //Delete a book
-  const handleDelete = (id) => {
-    //console.log(id);
-    fetch(`${config.API_URL}/book/${id}`, {
-      method: 'DELETE',
-    }).then(res => res.json()).then(data => {
-      alert("Book is successfully deleted!!!")
-      //setAllBooks(data);
-    });
+  const handleDelete = async (id, bookTitle) => {
+    if (!window.confirm(`Are you sure you want to delete "${bookTitle}"?`)) {
+      return;
+    }
+
+    try {
+      setDeletingId(id);
+      await apiClient.delete(`/book/${id}`);
+      setAllBooks(allBooks.filter(book => book._id !== id));
+      showToast.success('Book deleted successfully!');
+    } catch (error) {
+      showToast.error(error.message || 'Failed to delete book. Please try again.');
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className='px-4 my-12 flex justify-center items-center min-h-screen'>
+        <Spinner size="xl" />
+      </div>
+    );
   }
 
 
   return (
     <div className='px-4 my-12'>
-      <h2 className='mb-8 text-3xl font-bold'>Manage Your Books</h2>
+      <div className='mb-6 flex items-center justify-between'>
+        <h2 className='text-3xl font-bold'>
+          {isSeller && !isAdmin ? 'My Books' : 'Manage All Books'}
+        </h2>
+        <div className='flex gap-2'>
+          {isAdmin && <Badge color='green' size='lg'>Admin</Badge>}
+          {isSeller && !isAdmin && <Badge color='blue' size='lg'>Seller</Badge>}
+        </div>
+      </div>
+
+      {isAdmin && (
+        <Alert color="info" className='mb-6'>
+          <span className="font-medium">Admin Access:</span> You can view, edit, and delete any book in the system.
+        </Alert>
+      )}
+
+      {isSeller && !isAdmin && (
+        <Alert color="info" className='mb-6'>
+          <span className="font-medium">Seller Access:</span> You can view, edit, and delete only your own books.
+        </Alert>
+      )}
 
       {/* Table for book data */}
       <Table className='lg:w-[1180px]'>
@@ -59,7 +117,13 @@ const ManageBooks = () => {
                 </Link>
                 
 
-                <button onClick={() => handleDelete(book._id)} className='bg-red-600 px-4 py-1 font-semibold text-white rounded-sm hover:bg-sky-600'>Delete</button>
+                <button 
+                  onClick={() => handleDelete(book._id, book.bookTitle)} 
+                  className='bg-red-600 px-4 py-1 font-semibold text-white rounded-sm hover:bg-red-700 disabled:opacity-50'
+                  disabled={deletingId === book._id}
+                >
+                  {deletingId === book._id ? 'Deleting...' : 'Delete'}
+                </button>
               </Table.Cell>
             </Table.Row>
           </Table.Body>

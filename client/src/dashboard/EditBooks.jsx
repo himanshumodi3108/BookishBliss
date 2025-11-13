@@ -1,17 +1,32 @@
-import React, { useState } from 'react';
-import { useLoaderData, useParams } from 'react-router-dom';
-import { Button, Label, TextInput, Textarea, Select } from "flowbite-react";
+import React, { useState, useEffect, useContext } from 'react';
+import { useLoaderData, useParams, useNavigate } from 'react-router-dom';
+import { Button, Label, TextInput, Textarea, Select, Spinner, Badge, Alert } from "flowbite-react";
+import apiClient from '../utils/api';
+import showToast from '../utils/toast';
+import { AuthContext } from '../contexts/AuthProvider';
+import { checkAdminStatus } from '../utils/checkAdmin';
 
-import config from '../config/config';
+const EditBooks = ({ isAdmin, isSeller }) => {
+  const { user } = useContext(AuthContext);
+  const [userRole, setUserRole] = useState({ isAdmin: false, isSeller: false });
 
-// Then replace all fetch calls like this:
-// fetch(`${config.API_URL}/all-books`)
-
-const EditBooks = () => {
+  useEffect(() => {
+    const checkRole = async () => {
+      if (user) {
+        const adminStatus = await checkAdminStatus(user);
+        try {
+          const sellerStatus = await apiClient.get('/seller/status');
+          setUserRole({ isAdmin: adminStatus, isSeller: sellerStatus.isSeller || false });
+        } catch (error) {
+          setUserRole({ isAdmin: adminStatus, isSeller: false });
+        }
+      }
+    };
+    checkRole();
+  }, [user]);
   const {id} = useParams();
+  const navigate = useNavigate();
   const {bookTitle, authorName, imageURL, category, bookDescription, bookPDFURL, price} = useLoaderData();
-  //console.log(bookTitle);
-
 
   const bookCategories = [
     "Fiction",
@@ -34,49 +49,91 @@ const EditBooks = () => {
     "Art and Design"
   ]
 
-  const [selectedBookCategory, setSelectedBookCategory] = useState(bookCategories[0]);
+  const [selectedBookCategory, setSelectedBookCategory] = useState(category || bookCategories[0]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (category) {
+      setSelectedBookCategory(category);
+    }
+  }, [category]);
 
   const handleChangeSelectedValue = (event) => {
-    //console.log(event.target.value);
     setSelectedBookCategory(event.target.value);
   }
 
-  //Handle Book Upload
-  const handleUpdate = (event) => {
+  //Handle Book Update
+  const handleUpdate = async (event) => {
     event.preventDefault();
     const form = event.target;
 
-    const bookTitle = form.bookTitle.value;
-    const authorName = form.authorName.value;
-    const imageURL = form.imageURL.value;
+    const bookTitle = form.bookTitle.value.trim();
+    const authorName = form.authorName.value.trim();
+    const imageURL = form.imageURL.value.trim();
     const category = form.categoryName.value;
-    const bookDescription = form.bookDescription.value;
-    const bookPDFURL = form.bookPDFURL.value;
-    const price = form.price.value;
+    const bookDescription = form.bookDescription.value.trim();
+    const bookPDFURL = form.bookPDFURL.value.trim();
+    const price = parseFloat(form.price.value);
+
+    // Basic validation
+    if (!bookTitle || !authorName || !imageURL || !bookDescription || !bookPDFURL) {
+      showToast.error('Please fill in all required fields');
+      return;
+    }
+
+    if (isNaN(price) || price <= 0) {
+      showToast.error('Please enter a valid price');
+      return;
+    }
 
     const updateBookObj = {
-      bookTitle, authorName, imageURL, category, bookDescription, bookPDFURL, price
-    }
-    //console.log(bookObj);
+      bookTitle, 
+      authorName, 
+      imageURL, 
+      category, 
+      bookDescription, 
+      bookPDFURL, 
+      price
+    };
 
-    //Update book data
-    fetch(`${config.API_URL}/book/${id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(updateBookObj)
-    }).then(res => res.json()).then(data => {
-      //console.log(data);
-      alert("Book Updated Successfully!!!")
-    })
-    
+    try {
+      setLoading(true);
+      await apiClient.patch(`/book/${id}`, updateBookObj);
+      showToast.success('Book updated successfully!');
+      navigate('/admin/dashboard/manage');
+    } catch (error) {
+      showToast.error(error.message || 'Failed to update book. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
 
+  const finalIsAdmin = isAdmin !== undefined ? isAdmin : userRole.isAdmin;
+  const finalIsSeller = isSeller !== undefined ? isSeller : userRole.isSeller;
+
   return (
     <div className='px-4 my-12'>
-      <h2 className='mb-8 text-3xl font-bold'>Update the book data</h2>
+      <div className='mb-6 flex items-center justify-between'>
+        <h2 className='text-3xl font-bold'>Update the book data</h2>
+        <div className='flex gap-2'>
+          {finalIsAdmin && <Badge color='green' size='lg'>Admin</Badge>}
+          {finalIsSeller && !finalIsAdmin && <Badge color='blue' size='lg'>Seller</Badge>}
+        </div>
+      </div>
+      
+      {finalIsAdmin && (
+        <Alert color="info" className='mb-6'>
+          <span className="font-medium">Admin Access:</span> You can edit any book in the system.
+        </Alert>
+      )}
+      
+      {finalIsSeller && !finalIsAdmin && (
+        <Alert color="info" className='mb-6'>
+          <span className="font-medium">Seller Access:</span> You can edit your own books.
+        </Alert>
+      )}
+      
       <form onSubmit={handleUpdate} className="flex lg:w-[1180px] flex-col flex-wrap gap-4">
         {/* First Row */}
         <div className='flex gap-8'>
@@ -184,7 +241,16 @@ const EditBooks = () => {
           />
         </div>
 
-        <Button type="submit" className='mt-5'>Update Book</Button>
+        <Button type="submit" className='mt-5' disabled={loading}>
+          {loading ? (
+            <>
+              <Spinner size="sm" className="mr-2" />
+              Updating...
+            </>
+          ) : (
+            'Update Book'
+          )}
+        </Button>
       </form>
     </div>
   )

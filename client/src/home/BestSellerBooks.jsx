@@ -1,15 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import BookCards from '../components/BookCards';
-import config from '../config/config';
+import apiClient from '../utils/api';
 
 const BestSellerBooks = () => {
     const [books, setBooks] = useState([]);
 
     useEffect(() => {
-        fetch(`${config.API_URL}/all-books`)
-            .then(res => res.json())
-            .then(data => setBooks(data.slice(0, 6)))
-            .catch(error => console.error('Error fetching books:', error));
+        const fetchBooks = async () => {
+            try {
+                const data = await apiClient.get('/all-books?limit=6');
+                // Handle both old array format and new object format
+                const booksArray = Array.isArray(data) ? data : (data.books || []);
+                setBooks(booksArray.slice(0, 6));
+            } catch (error) {
+                console.error('Error fetching books:', error);
+            }
+        };
+        fetchBooks();
     }, [])
     
     return (

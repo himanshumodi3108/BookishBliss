@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import './App.css';
 import Navbar from './components/Navbar';
 import MyFooter from './components/MyFooter';
+import { Toaster } from 'sonner';
 
 function App() {
 
@@ -12,6 +13,7 @@ function App() {
       <Outlet />
       </div>
       <MyFooter />
+      <Toaster position="top-right" richColors />
     </>
   )
 }
