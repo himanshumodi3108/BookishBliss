@@ -13,8 +13,37 @@ const { generateToken } = require('./utils/jwt');
 const bcrypt = require('bcryptjs');
 
 // CORS configuration
+const getAllowedOrigins = () => {
+    const origins = [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'http://localhost:5000'
+    ];
+    
+    // Add frontend URL from environment variable
+    if (process.env.FRONTEND_URL) {
+        origins.push(process.env.FRONTEND_URL);
+    }
+    
+    // Add production URLs
+    origins.push('https://bookish-bliss-six.vercel.app');
+    origins.push('https://bookishbliss.onrender.com');
+    
+    return origins;
+};
+
 const corsOptions = {
-    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5000', 'https://bookishbliss.onrender.com', 'https://bookish-bliss.vercel.app'],  // Allow specific origins
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        const allowedOrigins = getAllowedOrigins();
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

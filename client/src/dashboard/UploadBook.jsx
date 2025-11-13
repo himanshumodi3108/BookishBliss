@@ -70,7 +70,7 @@ const UploadBook = ({ isAdmin, isSeller }) => {
         const user = auth.currentUser;
         const token = await user.getIdToken();
         
-        const response = await fetch(`${import.meta.env.VITE_API_URL || config.API_URL}/upload-image`, {
+        const response = await fetch(`${config.API_URL}/upload-image`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
